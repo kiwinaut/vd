@@ -3,7 +3,8 @@ from models import DownList, fn
 import views
 from worker import Pool
 from constants import Status
-
+from resources import set_model, downmodel
+from config import CONFIG
 
 
 
@@ -23,7 +24,6 @@ class Window(Gtk.Window):
         box.set_property('margin',2)
         self.add(box)
 
-        downmodel = Gtk.ListStore(int, object, int, GObject.TYPE_UINT64, str, str)
         # id, status, percentage, size, set,host
         # downmodel.append((1,'solving',50,2334212,'set','www.set.com',))
 
@@ -39,7 +39,6 @@ class Window(Gtk.Window):
         box.pack_start(downscroll, False, True, 0)
 
 
-        set_model = Gtk.ListStore(int, object, int, str, str, str)
 
         set_menu = Gtk.Menu()
 
@@ -80,6 +79,7 @@ class Window(Gtk.Window):
         butbox.pack_start(but, False, False, 0)
 
         but = Gtk.SpinButton.new_with_range(1, 20, 1)
+        but.set_value(CONFIG['worker_count'])
         but.connect('value-changed', self.on_limit_changed)
         butbox.pack_start(but, False, False, 0)
 
@@ -88,7 +88,7 @@ class Window(Gtk.Window):
 
         self.init_sets(set_model)
 
-        self.p = Pool(downmodel, set_model)
+        self.p = Pool()
 
         self.show_all()
 
@@ -115,7 +115,13 @@ class Window(Gtk.Window):
         pass
 
     def on_set_delete_activated(self, widget, view):
-        pass
+        selection = view.get_selection()
+        model, paths = selection.get_selected_rows()
+        for path in paths:
+            iter = model.get_iter(path)
+            uid = model[iter][5]
+            DownList.delete().where(DownList.uid==uid).execute()
+            model.remove(iter)
 
     def init_sets(self, model):
         i = 1

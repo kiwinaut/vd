@@ -10,6 +10,7 @@ class ConfigManager(object):
         self.defaults = {
             'database.path': '%s/.cache/vip.db' % HOME,
             'server.port': 8000,
+            'worker_count': 4,
         }
         self.config = {}
         self.options = {}

@@ -1,7 +1,7 @@
 from gi.repository import GObject
 import threading
-# from vip_tools.downloader import Downloader
-# from vip_tools.solver import VLink
+from vip_tools.downloader import Downloader
+from vip_tools.solver import VLink
 from vip_tools.saver import FileSaver
 from queue import Queue
 from collections import deque
@@ -9,54 +9,50 @@ from print_pretty import pretty_size
 import time
 from models import DownList, fn
 from constants import Status
+from resources import set_model, downmodel
 
 def idle_add(func):
     def callback(*args):
         GObject.idle_add(func, *args)
     return callback
 
-class VLink:
-    def __init__(self, raw, set, source, resize=True):
-        self.raw = raw
-        self.source = source
-        self.set = set
-        self.resize = resize
-        self.host = 'None.com'
-        # self.img_url = 'www.solved.com'
+# class VLink:
+#     def __init__(self, raw, set, source, resize=True):
+#         self.raw = raw
+#         self.source = source
+#         self.set = set
+#         self.resize = resize
+#         self.host = 'None.com'
+#         # self.img_url = 'www.solved.com'
 
-    @property
-    def img_url(self):
-        time.sleep(1)
-        return 'www.solved.com'
+#     @property
+#     def img_url(self):
+#         time.sleep(1)
+#         return 'www.solved.com'
 
-class Downloader:
-    """docstring for Downloader"""
-    def __init__(self, viplink, *streams):
-        self.vl = viplink
-        self.streams = streams
+# class Downloader:
+#     """docstring for Downloader"""
+#     def __init__(self, viplink, *streams):
+#         self.vl = viplink
+#         self.streams = streams
 
-    def download(self, cb=None):
-        total = 400000
-        cur = 0
-        for i in range(40):
-            cur += 8000
-            cb(cur, total)
-            time.sleep(0.1)
+#     def download(self, cb=None):
+#         total = 400000
+#         cur = 0
+#         for i in range(40):
+#             cur += 8000
+#             cb(cur, total)
+#             time.sleep(0.1)
 
 _sentinel = object()
 
 class Pool:
-    def __init__(self, pmodel, smodel):
+    def __init__(self):
         self.que = Queue()
         self.threads = []
         self.max = 4
 
-        self.p_model = pmodel
-        self.s_model = smodel
-
     def set_worker_limit(self, value):
-        for t in self.threads:
-            t.running = False
         self.max = value
         self.init_workers()
 
@@ -64,21 +60,27 @@ class Pool:
         self.init_workers()
 
     def pause(self):
-        if self.que.empty():
-            for i in range(self.max):
-                self.que.put(_sentinel)
-            return
-        else:
-            for t in self.threads:
-                t.running = False
+        for t in self.threads:
+            t.running = False
+        self.threads = []
 
     def init_workers(self):
-        if not self.que.empty():
-            for i in range(self.max):
-                p_iter = self.p_model.append((None, Status.DOWNLOAD, None, None, "", ""))
-                t = Worker(self.que, self.s_model, self.p_model, p_iter)
-                self.threads.append(t)
-                t.start()
+        if self.que.empty():
+            return
+        else:
+            count = self.max - len(self.threads)
+            if count > 0:
+                for i in range(count):
+                    t = Worker(self.que)
+                    self.threads.append(t)
+                    t.start()
+            elif count < 0:
+                for n in range(abs(count)):
+                    t = self.threads.pop()
+                    t.running = False
+            else:
+                return
+
 
     def append_from_uid(self, uid, set_iter):
         qu = DownList.select().where(DownList.uid==uid)
@@ -87,64 +89,72 @@ class Pool:
 
 
 class Worker(threading.Thread):
-    def __init__(self, que, set_model, pr_model, pr_iter):
+    def __init__(self, que):
         threading.Thread.__init__(self)
         self.que = que
         self.running = True
-        self.set_model = set_model
-        self.pr_model = pr_model
-        self.pr_iter = pr_iter
+        self.pr_iter = downmodel.append((None, Status.SLEEP, None, None, "", ""))
 
 
     def run(self):
         get = self.que.get
         while self.running and not self.que.empty():
             row = get()
-            # if row is _sentinel:
-            #     # self.que.put((_sentinel, None,))
-            #     break
             @idle_add
             def step1():
-                self.pr_model[self.pr_iter][1] = Status.SOLVING
+                downmodel[self.pr_iter][1] = Status.SOLVING
             step1()
 
-            vlink = VLink(*row[1:])
-            _ = vlink.img_url
             set_iter = row[4] #careful coming arguments with get!
+            try:
+                vlink = VLink(*row[1:-1])
+                _ = vlink.img_url
+                # raise Exception('dsd')
 
-            @idle_add
-            def start(row, set_iter):
-                self.pr_model[self.pr_iter][1] = Status.DOWNLOAD
-                self.pr_model[self.pr_iter][5] = vlink.host
-                self.pr_model[self.pr_iter][4] = vlink.set
-                self.pr_model[self.pr_iter][0] = row[0]
-                self.set_model[set_iter][1] = Status.ACTIVE #active
-            start(row, set_iter)
+                @idle_add
+                def step2(row, set_iter):
+                    downmodel[self.pr_iter][1] = Status.DOWNLOAD
+                    downmodel[self.pr_iter][5] = vlink.host
+                    downmodel[self.pr_iter][4] = vlink.set
+                    downmodel[self.pr_iter][0] = row[0]
+                    set_model[set_iter][1] = Status.ACTIVE #active
+                step2(row, set_iter)
 
-            saver = FileSaver(vlink)
 
-            @idle_add
-            def progress(current, total):
-                self.pr_model[self.pr_iter][2] = current * 100 // total
-                self.pr_model[self.pr_iter][3] = total
+                saver = FileSaver(vlink)
 
-            d = Downloader(vlink, saver)
-            d.download(progress)
+                @idle_add
+                def progress(current, total):
+                    downmodel[self.pr_iter][2] = current * 100 // total
+                    downmodel[self.pr_iter][3] = total
 
-            # finish
-            @idle_add
-            def finish(set_iter):
-                count = self.set_model[set_iter][2]
-                # self.set_model[set_iter][1] = 0 #active
-                count -= 1
-                if count <= 0:
-                    self.set_model.remove(set_iter)
-                else:
-                    self.set_model[set_iter][2] = count
-            finish(set_iter)
+                d = Downloader(vlink, saver)
+                d.download(progress)
 
+                # finish
+                @idle_add
+                def finish(set_iter, id):
+                    count = set_model[set_iter][2]
+                    # self.set_model[set_iter][1] = 0 #active
+                    count -= 1
+                    if count <= 0:
+                        set_model.remove(set_iter)
+                    else:
+                        set_model[set_iter][2] = count
+                    DownList.delete().where(DownList.id==id).execute()
+
+                finish(set_iter, row[0])
+
+            except Exception as e:
+                print(threading.current_thread(), e)
+                @idle_add
+                def step2(row, set_iter):
+                    downmodel[self.pr_iter][1] = Status.ERROR
+                    set_model[set_iter][1] = Status.ERROR #active
+                step2(row, set_iter)
+                continue
         # end
         @idle_add
         def end():
-            self.pr_model.remove(self.pr_iter)
+            downmodel.remove(self.pr_iter)
         end()

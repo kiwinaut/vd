@@ -6,3 +6,4 @@ class Status(Enum):
     ACTIVE = 2
     SOLVING = 3
     DOWNLOAD = 4
+    ERROR = 5
