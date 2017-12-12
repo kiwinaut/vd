@@ -2,6 +2,7 @@ import argparse
 import os
 
 HOME = os.environ['HOME']
+DIRPATH = os.path.dirname(os.path.realpath(__file__))
 
 class ConfigManager(object):
     "Config manager"

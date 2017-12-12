@@ -1,8 +1,14 @@
 from gi.repository import Gtk, GObject, Gdk
 from constants import Status
 import resources
+from print_pretty.pretty_size import psize
 
 
+
+def status_size_data_func(tree_column, cell, tree_model, iter, data):
+    size = tree_model[iter][3]
+    cell.set_property('text', psize(size))
+    
 def status_cell_data_func(tree_column, cell, tree_model, iter, data):
     status = tree_model[iter][1]
     if status == Status.ACTIVE:
@@ -52,7 +58,8 @@ class ProgWindow(Gtk.TreeView):
         column = Gtk.TreeViewColumn('size')
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, False)
-        column.add_attribute(renderer, 'text', 3)
+        column.set_cell_data_func(renderer, status_size_data_func, func_data=None)
+        # column.add_attribute(renderer, 'text', 3)
         self.append_column(column)
 
         column = Gtk.TreeViewColumn('host')

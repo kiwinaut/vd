@@ -4,10 +4,9 @@ from vip_tools.downloader import Downloader
 from vip_tools.solver import VLink
 from vip_tools.saver import FileSaver
 from queue import Queue
-from collections import deque
-from print_pretty import pretty_size
-import time
-from models import DownList, fn
+# from collections import deque
+# import time
+from models import DownList
 from constants import Status
 from resources import set_model, downmodel
 

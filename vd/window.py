@@ -47,6 +47,9 @@ class Window(Gtk.Window):
         item = Gtk.MenuItem.new_with_label('Peek')
         item.connect('activate', self.on_set_peek_activated, set_view)
         set_menu.append(item)
+        item = Gtk.MenuItem.new_with_label('Go to Source')
+        # item.connect('activate', self.on_set_peek_activated, set_view)
+        set_menu.append(item)
         item = Gtk.MenuItem.new_with_label('Delete')
         item.connect('activate', self.on_set_delete_activated, set_view)
         set_menu.append(item)
@@ -108,7 +111,7 @@ class Window(Gtk.Window):
             model[iter][1] = Status.QUEUED
             self.p.append_from_uid(uid, iter)
 
-    def on_set_remove_activated(self, widget, view):
+    def on_set_peek_activated(self, widget, view):
         pass
 
     def on_set_delete_activated(self, widget, view):
