@@ -6,7 +6,7 @@ queued_pixbuf = icon_theme.load_icon('appointment-soon', 16, Gtk.IconLookupFlags
 active_pixbuf = icon_theme.load_icon('media-playback-start', 16, Gtk.IconLookupFlags.USE_BUILTIN)
 download_pixbuf = icon_theme.load_icon('emblem-downloads', 16, Gtk.IconLookupFlags.USE_BUILTIN)
 solving = icon_theme.load_icon('document-open-recent', 16, Gtk.IconLookupFlags.USE_BUILTIN)
-solving = icon_theme.load_icon('emblem-important', 16, Gtk.IconLookupFlags.USE_BUILTIN)
+error = icon_theme.load_icon('emblem-important', 16, Gtk.IconLookupFlags.USE_BUILTIN)
 
 # queued_pixbuf = GdkPixbuf.Pixbuf.new_from_file('appointment-soon', 2)
 # active_pixbuf = GdkPixbuf.Pixbuf.new_from_file('media-playback-start', 2)
@@ -17,3 +17,5 @@ solving = icon_theme.load_icon('emblem-important', 16, Gtk.IconLookupFlags.USE_B
 
 set_model = Gtk.ListStore(int, object, int, str, str, str)
 downmodel = Gtk.ListStore(int, object, int, GObject.TYPE_UINT64, str, str)
+# id, status, percentage, size, set,host
+

@@ -8,7 +8,7 @@ class ConfigManager(object):
 
     def __init__(self):
         self.defaults = {
-            'database.path': '%s/.cache/vip.db' % HOME,
+            'database.path': '%s/.cache/vip_.db' % HOME,
             'server.port': 8000,
             'worker_count': 4,
         }

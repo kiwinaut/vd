@@ -15,6 +15,8 @@ def status_cell_data_func(tree_column, cell, tree_model, iter, data):
         cell.set_property('pixbuf', resources.solving)
     elif status == Status.DOWNLOAD:
         cell.set_property('pixbuf', resources.download_pixbuf)
+    elif status == Status.ERROR:
+        cell.set_property('pixbuf', resources.error)
 
 
 class ProgWindow(Gtk.TreeView):
@@ -53,16 +55,16 @@ class ProgWindow(Gtk.TreeView):
         column.add_attribute(renderer, 'text', 3)
         self.append_column(column)
 
-        column = Gtk.TreeViewColumn('set')
-        renderer = Gtk.CellRendererText()
-        column.pack_start(renderer, True)
-        column.add_attribute(renderer, 'text', 4)
-        self.append_column(column)
-
         column = Gtk.TreeViewColumn('host')
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, False)
         column.add_attribute(renderer, 'text', 5)
+        self.append_column(column)
+
+        column = Gtk.TreeViewColumn('set')
+        renderer = Gtk.CellRendererText()
+        column.pack_start(renderer, True)
+        column.add_attribute(renderer, 'text', 4)
         self.append_column(column)
 
 

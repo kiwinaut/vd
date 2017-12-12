@@ -44,7 +44,7 @@ def idle_add(func):
 #             cb(cur, total)
 #             time.sleep(0.1)
 
-_sentinel = object()
+# _sentinel = object()
 
 class Pool:
     def __init__(self):
@@ -120,7 +120,6 @@ class Worker(threading.Thread):
                     set_model[set_iter][1] = Status.ACTIVE #active
                 step2(row, set_iter)
 
-
                 saver = FileSaver(vlink)
 
                 @idle_add
@@ -148,10 +147,11 @@ class Worker(threading.Thread):
             except Exception as e:
                 print(threading.current_thread(), e)
                 @idle_add
-                def step2(row, set_iter):
+                def step2(row, set_iter, e):
                     downmodel[self.pr_iter][1] = Status.ERROR
                     set_model[set_iter][1] = Status.ERROR #active
-                step2(row, set_iter)
+                    DownList.update(status=str(e)).where(DownList.id==row[0]).execute()
+                step2(row, set_iter, e)
                 continue
         # end
         @idle_add

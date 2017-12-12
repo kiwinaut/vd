@@ -24,9 +24,6 @@ class Window(Gtk.Window):
         box.set_property('margin',2)
         self.add(box)
 
-        # id, status, percentage, size, set,host
-        # downmodel.append((1,'solving',50,2334212,'set','www.set.com',))
-
         downview = views.ProgWindow()
 
         downview.set_model(downmodel)
@@ -47,8 +44,8 @@ class Window(Gtk.Window):
         item = Gtk.MenuItem.new_with_label('Append')
         item.connect('activate', self.on_set_append_activated, set_view)
         set_menu.append(item)
-        item = Gtk.MenuItem.new_with_label('Remove')
-        item.connect('activate', self.on_set_remove_activated, set_view)
+        item = Gtk.MenuItem.new_with_label('Peek')
+        item.connect('activate', self.on_set_peek_activated, set_view)
         set_menu.append(item)
         item = Gtk.MenuItem.new_with_label('Delete')
         item.connect('activate', self.on_set_delete_activated, set_view)
