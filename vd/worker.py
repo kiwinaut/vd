@@ -64,6 +64,7 @@ class Pool:
         self.threads = []
 
     def init_workers(self):
+        self.threads = [t for t in self.threads if t.is_alive()]
         if self.que.empty():
             return
         else:
@@ -99,10 +100,10 @@ class Worker(threading.Thread):
         get = self.que.get
         while self.running and not self.que.empty():
             row = get()
-            @idle_add
-            def step1():
-                downmodel[self.pr_iter][1] = Status.SOLVING
-            step1()
+            # @idle_add
+            # def step1():
+            #     downmodel[self.pr_iter][1] = Status.SOLVING
+            self.step1()
 
             set_iter = row[4] #careful coming arguments with get!
             try:
@@ -110,14 +111,7 @@ class Worker(threading.Thread):
                 _ = vlink.img_url
                 # raise Exception('dsd')
 
-                @idle_add
-                def step2(row, set_iter):
-                    downmodel[self.pr_iter][1] = Status.DOWNLOAD
-                    downmodel[self.pr_iter][5] = vlink.host
-                    downmodel[self.pr_iter][4] = vlink.set
-                    downmodel[self.pr_iter][0] = row[0]
-                    set_model[set_iter][1] = Status.ACTIVE #active
-                step2(row, set_iter)
+                self.step2(row, vlink)
 
                 saver = FileSaver(vlink)
 
@@ -129,19 +123,7 @@ class Worker(threading.Thread):
                 d = Downloader(vlink, saver)
                 d.download(progress)
 
-                # finish
-                @idle_add
-                def finish(set_iter, id):
-                    count = set_model[set_iter][2]
-                    # self.set_model[set_iter][1] = 0 #active
-                    count -= 1
-                    if count <= 0:
-                        set_model.remove(set_iter)
-                    else:
-                        set_model[set_iter][2] = count
-                    DownList.delete().where(DownList.id==id).execute()
-
-                finish(set_iter, row[0])
+                self.finish(set_iter, row[0])
 
             except Exception as e:
                 print(threading.current_thread(), e)
@@ -157,3 +139,29 @@ class Worker(threading.Thread):
         def end():
             downmodel.remove(self.pr_iter)
         end()
+
+    @idle_add
+    def step1(self):
+        downmodel[self.pr_iter][1] = Status.SOLVING
+
+    @idle_add
+    def step2(self, row, vlink):
+        downmodel[self.pr_iter][1] = Status.DOWNLOAD
+        downmodel[self.pr_iter][5] = vlink.host
+        downmodel[self.pr_iter][4] = vlink.set
+        downmodel[self.pr_iter][0] = row[0]
+        set_iter = row[4]
+        set_model[set_iter][1] = Status.ACTIVE #active
+
+    # finish
+    @idle_add
+    def finish(self, set_iter, id):
+        count = set_model[set_iter][2]
+        # self.set_model[set_iter][1] = 0 #active
+        count -= 1
+        if count <= 0:
+            set_model.remove(set_iter)
+        else:
+            set_model[set_iter][2] = count
+        DownList.delete().where(DownList.id==id).execute()
+
