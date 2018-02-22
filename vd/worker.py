@@ -107,7 +107,7 @@ class Worker(threading.Thread):
 
             set_iter = row[4] #careful coming arguments with get!
             try:
-                vlink = VLink(*row[1:-1])
+                vlink = VLink(*row)
                 _ = vlink.img_url
                 # raise Exception('dsd')
 

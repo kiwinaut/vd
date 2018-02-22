@@ -106,16 +106,18 @@ class SetWindow(Gtk.TreeView):
         column.add_attribute(renderer, 'text', 2)
         self.append_column(column)
 
-        column = Gtk.TreeViewColumn('set')
-        renderer = Gtk.CellRendererText()
-        column.pack_start(renderer, True)
-        column.add_attribute(renderer, 'text', 3)
-        self.append_column(column)
-
         column = Gtk.TreeViewColumn('host')
+        column.set_resizable(True)
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, False)
         column.add_attribute(renderer, 'text', 4)
+        self.append_column(column)
+
+        column = Gtk.TreeViewColumn('set')
+        column.set_resizable(True)
+        renderer = Gtk.CellRendererText()
+        column.pack_start(renderer, True)
+        column.add_attribute(renderer, 'text', 3)
         self.append_column(column)
 
 

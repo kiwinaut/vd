@@ -5,6 +5,8 @@ from worker import Pool
 from constants import Status
 from resources import set_model, downmodel
 from config import CONFIG
+from urllib.parse import urlparse
+
 
 
 
@@ -127,7 +129,8 @@ class Window(Gtk.Window):
         i = 1
         qu = DownList.select(DownList, fn.COUNT(DownList.id).alias('m_count')).order_by(DownList.id).group_by(DownList.uid).naive()
         for q in qu:
-            model.append((i, Status.SLEEP, q.m_count, q.set, '', q.uid))
+            host = urlparse(q.raw)[1]
+            model.append((i, Status.SLEEP, q.m_count, q.set, host, q.uid))
             i += 1
 
 
