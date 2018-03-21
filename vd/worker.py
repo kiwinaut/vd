@@ -9,6 +9,8 @@ from queue import Queue
 from models import DownList
 from constants import Status
 from resources import set_model, downmodel
+from config import CONFIG
+
 
 def idle_add(func):
     def callback(*args):
@@ -58,6 +60,10 @@ class Pool:
     def play(self):
         self.init_workers()
 
+    def que_clean(self):
+        self.pause()
+        self.que = Queue()
+
     def pause(self):
         for t in self.threads:
             t.running = False
@@ -82,8 +88,13 @@ class Pool:
                 return
 
 
-    def append_from_uid(self, uid, set_iter):
+    def append_from_uid(self, uid, set_iter, peek=False):
         qu = DownList.select().where(DownList.uid==uid)
+        if peek:
+            for q in qu:
+                self.que.put((q.id, q.raw, q.set, q.resize, set_iter,))
+                break
+            return
         for q in qu:
             self.que.put((q.id, q.raw, q.set, q.resize, set_iter,))
 
@@ -94,6 +105,7 @@ class Worker(threading.Thread):
         self.que = que
         self.running = True
         self.pr_iter = downmodel.append((None, Status.SLEEP, None, None, "", ""))
+        self.spath = CONFIG['save_location']
 
 
     def run(self):
@@ -113,7 +125,7 @@ class Worker(threading.Thread):
 
                 self.step2(row, vlink)
 
-                saver = FileSaver(vlink)
+                saver = FileSaver(vlink, self.spath)
 
                 @idle_add
                 def progress(current, total):

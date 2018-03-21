@@ -85,6 +85,10 @@ class Window(Gtk.Window):
         but.connect('value-changed', self.on_limit_changed)
         butbox.pack_start(but, False, False, 0)
 
+        img = Gtk.Image.new_from_icon_name('edit-clear-all-symbolic', 2)
+        but = Gtk.Button(image=img)
+        but.connect('clicked', self.on_que_clean_clicked)
+        butbox.pack_start(but, False, False, 0)
 
         box.pack_start(set_scroll, True, True, 0)
 
@@ -104,6 +108,9 @@ class Window(Gtk.Window):
     def on_pause_clicked(self, widget):
         self.p.pause()
 
+    def on_que_clean_clicked(self, widget):
+        self.p.que_clean()
+
     def on_set_append_activated(self, widget, view):
         selection = view.get_selection()
         model, paths = selection.get_selected_rows()
@@ -114,7 +121,13 @@ class Window(Gtk.Window):
             self.p.append_from_uid(uid, iter)
 
     def on_set_peek_activated(self, widget, view):
-        pass
+        selection = view.get_selection()
+        model, paths = selection.get_selected_rows()
+        for path in paths:
+            iter = model.get_iter(path)
+            uid = model[iter][5]
+            model[iter][1] = Status.QUEUED
+            self.p.append_from_uid(uid, iter, peek=True)
 
     def on_set_delete_activated(self, widget, view):
         selection = view.get_selection()

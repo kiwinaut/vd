@@ -1,5 +1,7 @@
 import argparse
 import os
+from vip_tools.saver import SAVE_PATH
+
 
 HOME = os.environ['HOME']
 DIRPATH = os.path.dirname(os.path.realpath(__file__))
@@ -12,6 +14,7 @@ class ConfigManager(object):
             'database.path': '%s/.cache/vip.db' % HOME,
             'server.port': 8000,
             'worker_count': 4,
+            'save_location': SAVE_PATH,
         }
         self.config = {}
         self.options = {}
@@ -20,14 +23,17 @@ class ConfigManager(object):
     def parse(self):
         parser = argparse.ArgumentParser(description='vip server', prog='vip')
         parser.add_argument('--test', action="store_true", help="Use Test Files")
-        parser.add_argument('-p', '--port', type=int, metavar='8000', help="Port")
+        parser.add_argument('-d', '--db', type=str, help="Select local db")
+        parser.add_argument('-s', '--saveloc', type=str, help="Select save loc")
 
         args = parser.parse_args()
         self.options['dev'] = args.test
         if args.test:
             self.options['database.path'] = ':memory:'
-        if args.port:
-            self.options['server.port'] = args.port
+        if args.db:
+            self.options['database.path'] = args.db
+        if args.saveloc:
+            self.options['save_location'] = args.saveloc
 
 
 
