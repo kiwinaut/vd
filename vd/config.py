@@ -15,6 +15,7 @@ class ConfigManager(object):
             'server.port': 8000,
             'worker_count': 4,
             'save_location': SAVE_PATH,
+			'sha':'1953125930f206197496109b7fc1e94899c552fe1'
         }
         self.config = {}
         self.options = {}
@@ -33,6 +34,8 @@ class ConfigManager(object):
         if args.db:
             self.options['database.path'] = args.db
         if args.saveloc:
+            if not os.path.isdir(args.saveloc):
+                os.mkdir(args.saveloc)
             self.options['save_location'] = args.saveloc
 
 

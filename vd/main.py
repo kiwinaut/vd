@@ -9,4 +9,5 @@ from window import Window
 
 if __name__ == '__main__':
 	Window()
+	# import pdb; pdb.set_trace()
 	Gtk.main()
