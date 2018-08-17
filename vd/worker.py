@@ -10,6 +10,7 @@ from models import DownList
 from constants import Status
 from resources import set_model, downmodel
 from config import CONFIG
+import shutil
 
 
 def idle_add(func):
@@ -135,7 +136,7 @@ class Worker(threading.Thread):
                 d = Downloader(vlink, saver)
                 d.download(progress)
 
-                self.finish(set_iter, row[0])
+                self.finish(set_iter, row[0], saver.tarpath)
 
             except Exception as e:
                 print(threading.current_thread(), e)
@@ -167,12 +168,14 @@ class Worker(threading.Thread):
 
     # finish
     @idle_add
-    def finish(self, set_iter, id):
+    def finish(self, set_iter, id, tarpath):
         count = set_model[set_iter][2]
         # self.set_model[set_iter][1] = 0 #active
         count -= 1
         if count <= 0:
+            # means set finished
             set_model.remove(set_iter)
+            shutil.move(tarpath, CONFIG['complete_path'])
         else:
             set_model[set_iter][2] = count
         DownList.delete().where(DownList.id==id).execute()

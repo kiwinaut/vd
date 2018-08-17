@@ -49,6 +49,9 @@ class Window(Gtk.Window):
         item = Gtk.MenuItem.new_with_label('Peek')
         item.connect('activate', self.on_set_peek_activated, set_view)
         set_menu.append(item)
+        item = Gtk.MenuItem.new_with_label('Copy Sample Url')
+        item.connect('activate', self.on_csu_activated, set_view)
+        set_menu.append(item)
         item = Gtk.MenuItem.new_with_label('Go to Source')
         # item.connect('activate', self.on_set_peek_activated, set_view)
         set_menu.append(item)
@@ -129,6 +132,17 @@ class Window(Gtk.Window):
             model[iter][1] = Status.QUEUED
             self.p.append_from_uid(uid, iter, peek=True)
 
+    def on_csu_activated(self, widget, view):
+        selection = view.get_selection()
+        model, paths = selection.get_selected_rows()
+        raws = ''
+        for path in paths:
+            iter = model.get_iter(path)
+            raw = model[iter][6]
+            print(raw)
+            raws += raw
+        #TODO copy to clipboard
+
     def on_set_delete_activated(self, widget, view):
         selection = view.get_selection()
         model, paths = selection.get_selected_rows()
@@ -140,10 +154,10 @@ class Window(Gtk.Window):
 
     def init_sets(self, model):
         i = 1
-        qu = DownList.select(DownList, fn.COUNT(DownList.id).alias('m_count')).order_by(DownList.id).group_by(DownList.uid).naive()
+        qu = DownList.select(DownList, fn.COUNT(DownList.id).alias('m_count')).order_by(DownList.id).group_by(DownList.uid).objects()
         for q in qu:
             host = urlparse(q.raw)[1]
-            model.append((i, Status.SLEEP, q.m_count, q.set, host, q.uid))
+            model.append((i, Status.SLEEP, q.m_count, q.set, host, q.uid, q.raw, q.thumb))
             i += 1
 
 

@@ -13,6 +13,7 @@ class BaseModel(Model):
 
 class DownList(BaseModel):
     raw = CharField()
+    thumb = CharField()
     set = CharField()
     uid = CharField()
     source = CharField()
