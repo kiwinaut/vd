@@ -6,7 +6,7 @@ from vip_tools.saver import FileSaver
 from queue import Queue
 # from collections import deque
 # import time
-from models import DownList
+from models import Sets, Urls
 from constants import Status
 from resources import set_model, downmodel
 from config import CONFIG
@@ -89,15 +89,15 @@ class Pool:
                 return
 
 
-    def append_from_uid(self, uid, set_iter, peek=False):
-        qu = DownList.select().where(DownList.uid==uid)
+    def append_from_id(self, id, set_iter, peek=False):
+        qu = Urls.select().where(Urls.set_id==id)
         if peek:
             for q in qu:
                 self.que.put((q.id, q.raw, q.set, q.resize, set_iter,))
                 break
             return
         for q in qu:
-            self.que.put((q.id, q.raw, q.set, q.resize, set_iter,))
+            self.que.put((q.raw, q.set_id, q.resize, set_iter,))
 
 
 class Worker(threading.Thread):
@@ -118,7 +118,7 @@ class Worker(threading.Thread):
             #     downmodel[self.pr_iter][1] = Status.SOLVING
             self.step1()
 
-            set_iter = row[4] #careful coming arguments with get!
+            set_iter = row[3] #careful coming arguments with get!
             try:
                 vlink = VLink(*row)
                 _ = vlink.img_url

@@ -1,7 +1,7 @@
 import argparse
 import os
 from vip_tools.saver import SAVE_PATH
-from vdbs.vip_1_5 import __version__ as dbv
+from vdbs.vip_2_0 import __version__ as dbv
 
 HOME = os.environ['HOME']
 DIRPATH = os.path.dirname(os.path.realpath(__file__))

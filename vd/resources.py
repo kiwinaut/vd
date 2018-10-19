@@ -15,7 +15,7 @@ error = icon_theme.load_icon('emblem-important', 16, Gtk.IconLookupFlags.USE_BUI
 # tag_pixbuf = GdkPixbuf.Pixbuf.new_from_file('resources/pix/emblem-generic.png')
 # search_pixbuf = GdkPixbuf.Pixbuf.new_from_file('/usr/share/icons/Adwaita/16x16/places/folder-saved-search.png')
 
-set_model = Gtk.ListStore(int, object, int, str, str, str, str, str)
+set_model = Gtk.ListStore(int, object, int, str, str, str)
 downmodel = Gtk.ListStore(int, object, int, GObject.TYPE_UINT64, str, str)
 # id, status, percentage, size, set,host
 

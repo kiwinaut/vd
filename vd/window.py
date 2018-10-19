@@ -1,5 +1,5 @@
 from gi.repository import Gtk, GObject, Gdk
-from models import DownList, fn
+from models import Sets, fn
 import views
 from worker import Pool
 from constants import Status
@@ -149,15 +149,16 @@ class Window(Gtk.Window):
         for path in paths:
             iter = model.get_iter(path)
             uid = model[iter][5]
-            DownList.delete().where(DownList.uid==uid).execute()
+            # DownList.delete().where(DownList.uid==uid).execute()
             model.remove(iter)
 
     def init_sets(self, model):
         i = 1
-        qu = DownList.select(DownList, fn.COUNT(DownList.id).alias('m_count')).order_by(DownList.id).group_by(DownList.uid).objects()
+        qu = Sets.select()
+        # qu = DownList.select(DownList, fn.COUNT(DownList.id).alias('m_count')).order_by(DownList.id).group_by(DownList.uid).objects()
         for q in qu:
-            host = urlparse(q.raw)[1]
-            model.append((i, Status.SLEEP, q.m_count, q.set, host, q.uid, q.raw, q.thumb))
+            # host = urlparse(q.raw)[1]
+            model.append((i, Status.SLEEP, q.count, q.set, q.host, q.thumb))
             i += 1
 
 
