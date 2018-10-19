@@ -180,3 +180,25 @@ class Worker(threading.Thread):
             set_model[set_iter][2] = count
         DownList.delete().where(DownList.id==id).execute()
 
+
+class SetManager:
+    def __init__(self):
+        self.d = dict()
+
+    def add_set(self, id, count):
+        self.d[id] = count
+
+    def decrease(self, id, set_iter):
+        count = self.d[id] - 1
+        if count < 1:
+            # remove from gtk model
+            set_model.remove(set_iter)
+            # remove from dict
+            del self.d[id]
+            # move file
+            shutil.move(tarpath, CONFIG['complete_path'])
+            # clean from vd database
+            # register archive database?
+            # calculate sha?
+        else:
+            self.d[id] = count

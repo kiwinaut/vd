@@ -1,7 +1,7 @@
 import argparse
 import os
 from vip_tools.saver import SAVE_PATH
-
+from vdbs.vip_1_5 import __version__ as dbv
 
 HOME = os.environ['HOME']
 DIRPATH = os.path.dirname(os.path.realpath(__file__))
@@ -11,7 +11,7 @@ class ConfigManager(object):
 
     def __init__(self):
         self.defaults = {
-            'database.path': '%s/.cache/vip.db' % HOME,
+            'database.path': f'{HOME}/.cache/vip{dbv}.db',
             'server.port': 8000,
             'worker_count': 4,
             'save_location': SAVE_PATH + '/incomplete',
