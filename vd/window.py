@@ -3,7 +3,7 @@ from models import Sets, fn
 import views
 from worker import Pool
 from constants import Status
-from resources import set_model, downmodel
+from resources import set_model
 from config import CONFIG
 from urllib.parse import urlparse
 
@@ -19,23 +19,23 @@ class Window(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title="VD", gravity=1)
         # self.set_border_width(0)
-        self.set_default_size(500, 900)
+        self.set_default_size(750, 500)
         self.connect("delete-event", self.on_window_delete_event)
 
-        box = Gtk.Box.new(orientation=1, spacing=2)
-        box.set_property('margin',2)
+        box = Gtk.Box.new(orientation=1, spacing=0)
+        # box.set_property('margin',2)
         self.add(box)
 
-        downview = views.ProgWindow()
+        # downview = views.ProgWindow()
 
-        downview.set_model(downmodel)
+        # downview.set_model(downmodel)
 
-        downscroll = Gtk.ScrolledWindow()
-        downscroll.set_shadow_type(1)
-        downscroll.add(downview)
-        downscroll.set_size_request(-1, 160)
+        # downscroll = Gtk.ScrolledWindow()
+        # downscroll.set_shadow_type(1)
+        # downscroll.add(downview)
+        # downscroll.set_size_request(-1, 160)
 
-        box.pack_start(downscroll, False, True, 0)
+        # box.pack_start(downscroll, False, True, 0)
 
 
 
@@ -64,8 +64,9 @@ class Window(Gtk.Window):
         set_view.set_model(set_model)
 
         set_scroll = Gtk.ScrolledWindow()
+        set_scroll.set_overlay_scrolling(False)
         set_scroll.add(set_view)
-        set_scroll.set_shadow_type(1)
+        # set_scroll.set_shadow_type(1)
 
         butbox = Gtk.Box.new(orientation=0, spacing=0)
         butbox.get_style_context().add_class("linked")
@@ -119,9 +120,9 @@ class Window(Gtk.Window):
         model, paths = selection.get_selected_rows()
         for path in paths:
             iter = model.get_iter(path)
-            uid = model[iter][5]
+            id = model[iter][0]
             model[iter][1] = Status.QUEUED
-            self.p.append_from_uid(uid, iter)
+            self.p.append_from_id(id, iter)
 
     def on_set_peek_activated(self, widget, view):
         selection = view.get_selection()
@@ -153,13 +154,15 @@ class Window(Gtk.Window):
             model.remove(iter)
 
     def init_sets(self, model):
-        i = 1
+        # model.append((1, Status.SLEEP, 'Fashion-Land Mika Fashion Model Set 110 (x159 cover)',  'imx.to', 'q.thumb', 10, 45))
+        # model.append((1, Status.SLEEP, 'Fashion-Land Mika Fashion Model Set 110 (x159 cover)',  'imx.to', 'q.thumb', 45, 45))
+        # i = 1
         qu = Sets.select()
         # qu = DownList.select(DownList, fn.COUNT(DownList.id).alias('m_count')).order_by(DownList.id).group_by(DownList.uid).objects()
         for q in qu:
             # host = urlparse(q.raw)[1]
-            model.append((i, Status.SLEEP, q.count, q.set, q.host, q.thumb))
-            i += 1
+            model.append((q.id, Status.SLEEP, q.setname, q.host, q.done, q.count))
+            # i += 1
 
 
     def on_window_delete_event(self, widget, event):

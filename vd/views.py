@@ -8,9 +8,27 @@ from gi.repository import Gio
 from urllib import request
 from vip_tools.headers import firefox
 
+color_red= Gdk.RGBA(red=1.0, green=0.0, blue=0.0, alpha=1.0)
+color_green= Gdk.RGBA(red=0.0, green=1.0, blue=0.0, alpha=1.0)
+color_yellow= Gdk.RGBA(red=1.0, green=1.0, blue=0.0, alpha=1.0)
+color_orange= Gdk.RGBA(red=1.0, green=0.537, blue=0.0, alpha=1.0)
+color_grey= Gdk.RGBA(red=0.5, green=0.5, blue=0.5, alpha=1.0)
+
 def status_size_data_func(tree_column, cell, tree_model, iter, data):
     size = tree_model[iter][3]
     cell.set_property('text', psize(size))
+    
+def status_set_data_func(tree_column, cell, tree_model, iter, data):
+    status = tree_model[iter][1]
+    if status == Status.ACTIVE:
+        cell.set_property('foreground-rgba', color_green)
+    elif status == Status.SLEEP:
+        cell.set_property('foreground-rgba', color_grey)
+    elif status == Status.QUEUED:
+        cell.set_property('foreground-rgba', color_orange)
+    elif status == Status.ERROR:
+        cell.set_property('foreground-rgba', color_red)
+
     
 def status_cell_data_func(tree_column, cell, tree_model, iter, data):
     status = tree_model[iter][1]
@@ -26,6 +44,13 @@ def status_cell_data_func(tree_column, cell, tree_model, iter, data):
         cell.set_property('pixbuf', resources.download_pixbuf)
     elif status == Status.ERROR:
         cell.set_property('pixbuf', resources.error)
+
+def progress_text_cell_data_func(tree_column, cell, tree_model, iter, data):
+    done = tree_model[iter][4]
+    total = tree_model[iter][5]
+    value = done*100//total
+    cell.set_property('text', f'{done}/{total}  {value}%')
+    cell.set_property('value', value)
 
 
 class ThumbPopOver(Gtk.Popover):
@@ -106,6 +131,8 @@ class SetWindow(Gtk.TreeView):
 
         self.get_selection().set_mode(3)
         self.set_rubber_banding(True)
+        # self.set_property('headers-visible', False)
+
 
         column = Gtk.TreeViewColumn('id')
         renderer = Gtk.CellRendererText()
@@ -113,31 +140,43 @@ class SetWindow(Gtk.TreeView):
         column.add_attribute(renderer, 'text', 0)
         self.append_column(column)
 
-        column = Gtk.TreeViewColumn('status')
-        renderer = Gtk.CellRendererPixbuf()
-        column.pack_start(renderer, False)
-        # column.add_attribute(renderer, 'text', 1)
-        column.set_cell_data_func(renderer, status_cell_data_func, func_data=None)
-        self.append_column(column)
-
-        column = Gtk.TreeViewColumn('count')
-        renderer = Gtk.CellRendererText()
-        column.pack_start(renderer, False)
-        column.add_attribute(renderer, 'text', 2)
-        self.append_column(column)
-
-        column = Gtk.TreeViewColumn('host')
-        column.set_resizable(True)
-        renderer = Gtk.CellRendererText()
-        column.pack_start(renderer, False)
-        column.add_attribute(renderer, 'text', 4)
-        self.append_column(column)
-
         column = Gtk.TreeViewColumn('set')
+        column.set_max_width(400)
         column.set_resizable(True)
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
+        column.add_attribute(renderer, 'text', 2)
+        column.set_cell_data_func(renderer, status_set_data_func, func_data=None)
+        self.append_column(column)
+
+        # column = Gtk.TreeViewColumn('status')
+        # renderer = Gtk.CellRendererPixbuf()
+        # column.pack_start(renderer, False)
+        # # column.add_attribute(renderer, 'text', 1)
+        # column.set_cell_data_func(renderer, status_cell_data_func, func_data=None)
+        # self.append_column(column)
+
+        # column = Gtk.TreeViewColumn('count')
+        # renderer = Gtk.CellRendererText()
+        # column.pack_start(renderer, False)
+        # column.add_attribute(renderer, 'text', 2)
+        # self.append_column(column)
+
+        column = Gtk.TreeViewColumn('host')
+        column.set_max_width(80)
+        column.set_resizable(True)
+        renderer = Gtk.CellRendererText()
+        column.pack_start(renderer, False)
         column.add_attribute(renderer, 'text', 3)
+        self.append_column(column)
+
+        column = Gtk.TreeViewColumn('progress')
+        # column.set_fixed_width(120)
+        renderer = Gtk.CellRendererProgress()
+        column.pack_start(renderer, False)
+        # column.add_attribute(renderer, 'value', 2)
+        # column.add_attribute(renderer, 'text', 2)
+        column.set_cell_data_func(renderer, progress_text_cell_data_func, func_data=None)
         self.append_column(column)
 
         self.thumb_view = ThumbPopOver(self)
