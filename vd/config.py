@@ -12,6 +12,7 @@ class ConfigManager(object):
     def __init__(self):
         self.defaults = {
             'database.path': f'{HOME}/.cache/vip{dbv}.db',
+            # 'database.path': f'{HOME}/.cache/vip.db',
             'server.port': 8000,
             'worker_count': 4,
             'save_location': SAVE_PATH + '/incomplete',
