@@ -3,16 +3,15 @@ from constants import Status
 import resources
 from print_pretty.pretty_size import psize
 
-from gi.repository.GdkPixbuf import Pixbuf 
-from gi.repository import Gio 
-from urllib import request
-from vip_tools.headers import firefox
+# from gi.repository.GdkPixbuf import Pixbuf 
+# from gi.repository import Gio 
 
 color_red= Gdk.RGBA(red=1.0, green=0.0, blue=0.0, alpha=1.0)
 color_green= Gdk.RGBA(red=0.0, green=1.0, blue=0.0, alpha=1.0)
 color_yellow= Gdk.RGBA(red=1.0, green=1.0, blue=0.0, alpha=1.0)
 color_orange= Gdk.RGBA(red=1.0, green=0.537, blue=0.0, alpha=1.0)
 color_grey= Gdk.RGBA(red=0.5, green=0.5, blue=0.5, alpha=1.0)
+color_black= Gdk.RGBA(red=0, green=0, blue=0, alpha=1.0)
 
 def status_size_data_func(tree_column, cell, tree_model, iter, data):
     size = tree_model[iter][3]
@@ -21,7 +20,7 @@ def status_size_data_func(tree_column, cell, tree_model, iter, data):
 def status_set_data_func(tree_column, cell, tree_model, iter, data):
     status = tree_model[iter][1]
     if status == Status.ACTIVE:
-        cell.set_property('foreground-rgba', color_green)
+        cell.set_property('foreground-rgba', color_black)
     elif status == Status.SLEEP:
         cell.set_property('foreground-rgba', color_grey)
     elif status == Status.QUEUED:
@@ -49,7 +48,8 @@ def progress_text_cell_data_func(tree_column, cell, tree_model, iter, data):
     done = tree_model[iter][4]
     total = tree_model[iter][5]
     value = done*100//total
-    cell.set_property('text', f'{done}/{total}  {value}%')
+    # cell.set_property('text', f'{done}/{total}  {value}%')
+    cell.set_property('text', f'{done}/{total}')
     cell.set_property('value', value)
 
 
@@ -61,12 +61,27 @@ class ThumbPopOver(Gtk.Popover):
 
         self.set_position(Gtk.PositionType.LEFT)
 
-        img = Gtk.Image()
-        self.add(img)
-        img.show_all()
+        # self.i1 = Gtk.Image()
+        # self.i2 = Gtk.Image()
+        box = Gtk.Box.new(orientation=0, spacing=0)
+        self.add(box)
+        self.last_id = None
+        # img.show_all()
 
     def set_image(self, pixbuf):
         self.get_child().set_from_pixbuf(pixbuf)
+
+    def add_image(self, pixbuf, id):
+        box = self.get_child()
+        if id != self.last_id:
+            def cb(w,d):
+                box.remove(w)
+            box.foreach(cb,None)
+        self.last_id = id
+        img = Gtk.Image()
+        img.set_from_pixbuf(pixbuf)
+        box.pack_start(img, False, False, 0)
+        box.show_all()
 
 
 class ProgWindow(Gtk.TreeView):
@@ -141,7 +156,7 @@ class SetWindow(Gtk.TreeView):
         self.append_column(column)
 
         column = Gtk.TreeViewColumn('set')
-        column.set_max_width(400)
+        column.set_fixed_width(450)
         column.set_resizable(True)
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
@@ -163,7 +178,7 @@ class SetWindow(Gtk.TreeView):
         # self.append_column(column)
 
         column = Gtk.TreeViewColumn('host')
-        column.set_max_width(80)
+        # column.set_fixed_width(100)
         column.set_resizable(True)
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, False)
@@ -180,7 +195,7 @@ class SetWindow(Gtk.TreeView):
         self.append_column(column)
 
         self.thumb_view = ThumbPopOver(self)
-        self.connect('row-activated', self.on_row_activated)
+        # self.connect('row-activated', self.on_row_activated)
 
 
 
@@ -223,21 +238,21 @@ class SetWindow(Gtk.TreeView):
                 tooltip.set_icon(pixbuf)
                 return True
 
-    def on_row_activated(self, tree_view, path, column):
-            model = tree_view.get_model()
-            iter = model.get_iter(path)
-            thumb_url = model[iter][7]
-            if thumb_url:
-                popover = self.thumb_view
-                # self.on_get_screenshot(tree_view, model, iter)
-                rect = self.get_background_area(path, column)
-                rect.y = rect.y + 8
-                popover.set_pointing_to(rect)
-                #
-                req = request.Request(thumb_url, headers=firefox)
-                response = request.urlopen(req)
-                input_stream = Gio.MemoryInputStream.new_from_data(response.read(), None) 
-                pixbuf = Pixbuf.new_from_stream(input_stream, None)
-                #
-                popover.set_image(pixbuf)
-                popover.popup()
+    # def on_row_activated(self, tree_view, path, column):
+    #         model = tree_view.get_model()
+    #         iter = model.get_iter(path)
+    #         thumb_url = model[iter][7]
+    #         if thumb_url:
+    #             popover = self.thumb_view
+    #             # self.on_get_screenshot(tree_view, model, iter)
+    #             rect = self.get_background_area(path, column)
+    #             rect.y = rect.y + 8
+    #             popover.set_pointing_to(rect)
+    #             #
+    #             req = request.Request(thumb_url, headers=firefox)
+    #             response = request.urlopen(req)
+    #             input_stream = Gio.MemoryInputStream.new_from_data(response.read(), None) 
+    #             pixbuf = Pixbuf.new_from_stream(input_stream, None)
+    #             #
+    #             popover.set_image(pixbuf)
+    #             popover.popup()

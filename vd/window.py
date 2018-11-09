@@ -1,13 +1,14 @@
-from gi.repository import Gtk, GObject, Gdk
-from models import Sets, fn
+from gi.repository import Gtk, Gio
+from models import Sets, Urls
 import views
 from worker import Pool
 from constants import Status
-from resources import set_model
+from resources import set_model#, filter_model
 from config import CONFIG
-from urllib.parse import urlparse
-
-
+# from urllib.parse import urlparse
+from urllib import request
+from vip_tools.headers import firefox
+from gi.repository.GdkPixbuf import Pixbuf 
 
 
 
@@ -61,7 +62,13 @@ class Window(Gtk.Window):
 
         set_menu.show_all()
 
+        # filter_model.set_visible_func(self.filter_func)
+        # self.filter_text = None
         set_view.set_model(set_model)
+        set_view.connect('row-activated', self.on_row_activated)
+        # entry = set_view.get_search_entry()
+        # entry.connect('activate', self.filter_activated)
+
 
         set_scroll = Gtk.ScrolledWindow()
         set_scroll.set_overlay_scrolling(False)
@@ -99,6 +106,8 @@ class Window(Gtk.Window):
         self.init_sets(set_model)
 
         self.p = Pool()
+        # self.thumb_view = ThumbPopOver(self)
+
 
         self.show_all()
 
@@ -114,6 +123,7 @@ class Window(Gtk.Window):
 
     def on_que_clean_clicked(self, widget):
         self.p.que_clean()
+        #clean status
 
     def on_set_append_activated(self, widget, view):
         selection = view.get_selection()
@@ -149,9 +159,31 @@ class Window(Gtk.Window):
         model, paths = selection.get_selected_rows()
         for path in paths:
             iter = model.get_iter(path)
-            uid = model[iter][5]
-            # DownList.delete().where(DownList.uid==uid).execute()
+            id = model[iter][0]
+            Sets.delete().where(Sets.id==id).execute()
+            Urls.delete().where(Urls.set_id==id).execute()
             model.remove(iter)
+
+
+    def on_row_activated(self, tree_view, path, column):
+            model = tree_view.get_model()
+            iter = model.get_iter(path)
+            id = model[iter][0]
+            qu = Urls.select(Urls.thumb).where(Urls.set_id==id).limit(3)
+            for q in qu:
+                popover = tree_view.thumb_view
+                # self.on_get_screenshot(tree_view, model, iter)
+                rect = tree_view.get_background_area(path, column)
+                rect.y = rect.y + 24
+                popover.set_pointing_to(rect)
+                #
+                req = request.Request(q.thumb, headers=firefox)
+                response = request.urlopen(req)
+                input_stream = Gio.MemoryInputStream.new_from_data(response.read(), None) 
+                pixbuf = Pixbuf.new_from_stream(input_stream, None)
+                #
+                popover.add_image(pixbuf, id)
+                popover.popup()
 
     def init_sets(self, model):
         # model.append((1, Status.SLEEP, 'Fashion-Land Mika Fashion Model Set 110 (x159 cover)',  'imx.to', 'q.thumb', 10, 45))
@@ -167,3 +199,15 @@ class Window(Gtk.Window):
 
     def on_window_delete_event(self, widget, event):
         Gtk.main_quit()
+
+    def filter_func(self, model, iter, data):
+        """Tests if the language in the row is the one in the filter"""
+        if self.filter_text is None:
+            return True
+        else:
+            return self.filter_text in model[iter][2]
+
+
+    def filter_activated(self, widget):
+        text = widget.get_text()
+        print(text)

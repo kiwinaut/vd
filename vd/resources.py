@@ -16,6 +16,7 @@ from gi.repository import GdkPixbuf, Gtk, GObject
 # search_pixbuf = GdkPixbuf.Pixbuf.new_from_file('/usr/share/icons/Adwaita/16x16/places/folder-saved-search.png')
 
 set_model = Gtk.ListStore(int, object, str, str, int, int)
+# filter_model = set_model.filter_new()
 # downmodel = Gtk.ListStore(int, object, int, GObject.TYPE_UINT64, str, str)
 # id, status, percentage, size, set,host
 
