@@ -15,8 +15,25 @@ from gi.repository import GdkPixbuf, Gtk, GObject
 # tag_pixbuf = GdkPixbuf.Pixbuf.new_from_file('resources/pix/emblem-generic.png')
 # search_pixbuf = GdkPixbuf.Pixbuf.new_from_file('/usr/share/icons/Adwaita/16x16/places/folder-saved-search.png')
 
-set_model = Gtk.ListStore(int, object, str, str, int, int)
+set_model = Gtk.ListStore(int, object, str, str, int, int, int, int)
 # filter_model = set_model.filter_new()
 # downmodel = Gtk.ListStore(int, object, int, GObject.TYPE_UINT64, str, str)
 # id, status, percentage, size, set,host
 
+# from viewmodels import UrlModel
+# set_model = UrlModel()
+	
+class InfoModel(GObject.GObject):
+    worker_count = GObject.Property(type=int)
+    status = GObject.Property(type=str)
+    que_len = GObject.Property(type=int)
+    total_download = GObject.Property(type=int)
+
+
+    def __init__(self):
+        GObject.GObject.__init__(self)
+
+    def set_status(self, value):
+        self.status = value
+
+info = InfoModel()

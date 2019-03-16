@@ -1,4 +1,4 @@
-from gi.repository import Gtk, Gio
+from gi.repository import Gtk, Gio, GObject
 from models import Sets, Urls
 import views
 from worker import Pool
@@ -9,8 +9,15 @@ from config import CONFIG
 from urllib import request
 from vip_tools.headers import firefox
 from gi.repository.GdkPixbuf import Pixbuf 
-
-
+import subprocess as sp
+from vip_tools.saver import make_tarname
+import os
+# SAVE_PATH = '/home/soni/Downloads/p/viper'
+import shutil
+# from multiprocessing import Pool
+import threading
+import pathlib
+from resources import info
 
 
 class Window(Gtk.Window):
@@ -47,15 +54,15 @@ class Window(Gtk.Window):
         item = Gtk.MenuItem.new_with_label('Append')
         item.connect('activate', self.on_set_append_activated, set_view)
         set_menu.append(item)
-        item = Gtk.MenuItem.new_with_label('Peek')
-        item.connect('activate', self.on_set_peek_activated, set_view)
+        item = Gtk.MenuItem.new_with_label('View')
+        item.connect('activate', self.on_set_view_activated, set_view)
         set_menu.append(item)
-        item = Gtk.MenuItem.new_with_label('Copy Sample Url')
-        item.connect('activate', self.on_csu_activated, set_view)
-        set_menu.append(item)
-        item = Gtk.MenuItem.new_with_label('Go to Source')
-        # item.connect('activate', self.on_set_peek_activated, set_view)
-        set_menu.append(item)
+        # item = Gtk.MenuItem.new_with_label('Copy Sample Url')
+        # item.connect('activate', self.on_csu_activated, set_view)
+        # set_menu.append(item)
+        # item = Gtk.MenuItem.new_with_label('Go to Source')
+        # # item.connect('activate', self.on_set_peek_activated, set_view)
+        # set_menu.append(item)
         item = Gtk.MenuItem.new_with_label('Delete')
         item.connect('activate', self.on_set_delete_activated, set_view)
         set_menu.append(item)
@@ -81,6 +88,8 @@ class Window(Gtk.Window):
         header = Gtk.HeaderBar()
         header.set_show_close_button(True)
         header.pack_start(butbox)
+        info.bind_property('status', header, 'title', 0)
+        info.bind_property('que_len', header, 'subtitle', 0)
         self.set_titlebar(header)
         img = Gtk.Image.new_from_icon_name('media-playback-start-symbolic', 2)
         but = Gtk.Button(image=img)
@@ -134,14 +143,14 @@ class Window(Gtk.Window):
             model[iter][1] = Status.QUEUED
             self.p.append_from_id(id, iter)
 
-    def on_set_peek_activated(self, widget, view):
+    def on_set_view_activated(self, widget, view):
         selection = view.get_selection()
         model, paths = selection.get_selected_rows()
         for path in paths:
             iter = model.get_iter(path)
-            uid = model[iter][5]
-            model[iter][1] = Status.QUEUED
-            self.p.append_from_uid(uid, iter, peek=True)
+            id = model[iter][0]
+            c = sp.run(['firefox', 'http://localhost:8000/vd/'+str(id)], encoding='utf-8')
+
 
     def on_csu_activated(self, widget, view):
         selection = view.get_selection()
@@ -160,40 +169,70 @@ class Window(Gtk.Window):
         for path in paths:
             iter = model.get_iter(path)
             id = model[iter][0]
-            Sets.delete().where(Sets.id==id).execute()
-            Urls.delete().where(Urls.set_id==id).execute()
-            model.remove(iter)
+            #
+            tarname = make_tarname(model[iter][2])
+            tarpath = pathlib.Path(CONFIG['save_location'], tarname)
+            target = pathlib.Path(CONFIG['complete_path'], tarname)
+            # tarpath = os.path.join(CONFIG['save_location'], tarname)
+            if tarpath.is_file():
+                try:
+                    if target.exists():
+                        raise Exception(f'target already exist: {target}')
+                    tarpath.replace(target)
+                    # shutil.move(tarpath, CONFIG['complete_path'])
+                    Sets.delete().where(Sets.id==id).execute()
+                    Urls.delete().where(Urls.set_id==id).execute()
+                    model.remove(iter)
+                    print(target)
+                except Exception as e:
+                    print(e)
+            else:
+                Sets.delete().where(Sets.id==id).execute()
+                Urls.delete().where(Urls.set_id==id).execute()
+                model.remove(iter)
 
 
     def on_row_activated(self, tree_view, path, column):
             model = tree_view.get_model()
             iter = model.get_iter(path)
             id = model[iter][0]
-            qu = Urls.select(Urls.thumb).where(Urls.set_id==id).limit(3)
-            for q in qu:
-                popover = tree_view.thumb_view
-                # self.on_get_screenshot(tree_view, model, iter)
-                rect = tree_view.get_background_area(path, column)
-                rect.y = rect.y + 24
-                popover.set_pointing_to(rect)
-                #
-                req = request.Request(q.thumb, headers=firefox)
+            qu = Urls.select(Urls.thumb).where(Urls.set_id==id).limit(4).tuples()
+            urls = [q[0] for q in qu]
+
+            popover = tree_view.thumb_view
+            rect = tree_view.get_background_area(path, column)
+            rect.y = rect.y + 24
+            popover.set_pointing_to(rect)
+            # pool = Pool(4)
+
+            def get_pix(url):
+                req = request.Request(url, headers=firefox)
                 response = request.urlopen(req)
-                input_stream = Gio.MemoryInputStream.new_from_data(response.read(), None) 
-                pixbuf = Pixbuf.new_from_stream(input_stream, None)
-                #
-                popover.add_image(pixbuf, id)
-                popover.popup()
+                input_stream = Gio.MemoryInputStream.new_from_data(response.read(), None)
+
+                def idle(input_stream):
+                    pixbuf = Pixbuf.new_from_stream(input_stream, None)
+                    popover.add_image(pixbuf, id)
+
+                GObject.idle_add(idle, input_stream)
+                 
+            for url in urls:
+                t = threading.Thread(target=get_pix, args = (url,))
+                t.start()
+
+            popover.popup()
 
     def init_sets(self, model):
-        # model.append((1, Status.SLEEP, 'Fashion-Land Mika Fashion Model Set 110 (x159 cover)',  'imx.to', 'q.thumb', 10, 45))
-        # model.append((1, Status.SLEEP, 'Fashion-Land Mika Fashion Model Set 110 (x159 cover)',  'imx.to', 'q.thumb', 45, 45))
         # i = 1
-        qu = Sets.select()
+        if CONFIG['filter']:
+            qu = Sets.select().where(Sets.setname ** f"%{CONFIG['filter']}%")
+        else:
+            qu = Sets.select()
+            
         # qu = DownList.select(DownList, fn.COUNT(DownList.id).alias('m_count')).order_by(DownList.id).group_by(DownList.uid).objects()
-        for q in qu:
+        for i, q in enumerate(qu, start=1):
             # host = urlparse(q.raw)[1]
-            model.append((q.id, Status.SLEEP, q.setname, q.host, q.done, q.count))
+            model.append((q.id, Status.SLEEP, q.setname, q.host, q.done, q.count, i, q.error))
             # i += 1
 
 

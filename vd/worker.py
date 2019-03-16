@@ -8,7 +8,7 @@ from queue import Queue
 # import time
 from models import Sets, Urls
 from constants import Status
-from resources import set_model
+from resources import set_model, info
 from config import CONFIG
 import shutil
 
@@ -55,6 +55,7 @@ class Pool:
         self.que = Queue()
         self.threads = []
         self.max = 4
+        info.worker_count = self.max
         # self.sc = SpeedChecker()
 
     def set_worker_limit(self, value):
@@ -63,6 +64,7 @@ class Pool:
 
     def play(self):
         self.init_workers()
+        info.set_status('running') 
 
     def que_clean(self):
         self.pause()
@@ -74,6 +76,7 @@ class Pool:
             t.running = False
         # self.sc.kill()
         self.threads = []
+        info.set_status('paused') 
 
     def init_workers(self):
         self.threads = [t for t in self.threads if t.is_alive()]
@@ -93,13 +96,14 @@ class Pool:
                     t.running = False
             else:
                 return
-
+        info.worker_count = len(self.threads)
 
     def append_from_id(self, id, set_iter):
         qu = Urls.select(Urls, Sets).join(Sets).where(Urls.set_id==id).dicts()
         for q in qu:
             # print(q)
             self.que.put((q, set_iter,))
+        info.que_len += self.que.qsize()
 
 
 class SpeedChecker(threading.Thread):
@@ -162,7 +166,9 @@ class Worker(threading.Thread):
                 print(threading.current_thread(), e)
                 @idle_add
                 def steperr(row, set_iter, e):
-                    set_model[set_iter][1] = Status.ERROR #active
+                    # set_model[set_iter][1] = Status.ERROR #active
+                    set_model[set_iter][7] += 1
+                    Sets.update(error=set_model[set_iter][7]).where(Sets.id==row['set']).execute()
                     Urls.update(status=str(e)).where(Urls.id==row['id']).execute()
                 steperr(row, set_iter, e)
                 continue

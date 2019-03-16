@@ -17,16 +17,26 @@ def status_size_data_func(tree_column, cell, tree_model, iter, data):
     size = tree_model[iter][3]
     cell.set_property('text', psize(size))
     
+def error_set_data_func(tree_column, cell, tree_model, iter, data):
+    error = tree_model[iter][7]
+    if error > 0:
+        cell.set_property('foreground-rgba', color_red)
+    else:
+        cell.set_property('foreground-rgba', None)
+
+    
 def status_set_data_func(tree_column, cell, tree_model, iter, data):
     status = tree_model[iter][1]
+    # set = tree_model[iter][2]
+    # cell.set_property('text', tree_model[iter][2])
     if status == Status.ACTIVE:
-        cell.set_property('foreground-rgba', color_black)
+        cell.set_property('cell-background-rgba', color_green)
     elif status == Status.SLEEP:
-        cell.set_property('foreground-rgba', color_grey)
+        cell.set_property('cell-background-rgba', None)
     elif status == Status.QUEUED:
-        cell.set_property('foreground-rgba', color_orange)
+        cell.set_property('cell-background-rgba', color_orange)
     elif status == Status.ERROR:
-        cell.set_property('foreground-rgba', color_red)
+        cell.set_property('cell-background-rgba', color_red)
 
     
 def status_cell_data_func(tree_column, cell, tree_model, iter, data):
@@ -127,6 +137,12 @@ class ProgWindow(Gtk.TreeView):
         column.add_attribute(renderer, 'text', 5)
         self.append_column(column)
 
+        column = Gtk.TreeViewColumn('err')
+        renderer = Gtk.CellRendererText()
+        column.pack_start(renderer, False)
+        column.add_attribute(renderer, 'text', 6)
+        self.append_column(column)
+
         column = Gtk.TreeViewColumn('set')
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
@@ -152,7 +168,7 @@ class SetWindow(Gtk.TreeView):
         column = Gtk.TreeViewColumn('id')
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, False)
-        column.add_attribute(renderer, 'text', 0)
+        column.add_attribute(renderer, 'text', 6)
         self.append_column(column)
 
         column = Gtk.TreeViewColumn('set')
@@ -171,11 +187,6 @@ class SetWindow(Gtk.TreeView):
         # column.set_cell_data_func(renderer, status_cell_data_func, func_data=None)
         # self.append_column(column)
 
-        # column = Gtk.TreeViewColumn('count')
-        # renderer = Gtk.CellRendererText()
-        # column.pack_start(renderer, False)
-        # column.add_attribute(renderer, 'text', 2)
-        # self.append_column(column)
 
         column = Gtk.TreeViewColumn('host')
         # column.set_fixed_width(100)
@@ -183,6 +194,13 @@ class SetWindow(Gtk.TreeView):
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, False)
         column.add_attribute(renderer, 'text', 3)
+        self.append_column(column)
+
+        column = Gtk.TreeViewColumn('error')
+        renderer = Gtk.CellRendererText()
+        column.pack_start(renderer, False)
+        column.add_attribute(renderer, 'text', 7)
+        column.set_cell_data_func(renderer, error_set_data_func, func_data=None)
         self.append_column(column)
 
         column = Gtk.TreeViewColumn('progress')
