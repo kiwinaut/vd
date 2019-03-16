@@ -1,7 +1,7 @@
 import argparse
 import os
 from vip_tools.saver import SAVE_PATH
-from vdbs.vip_1_5 import __version__ as dbv
+from vdbs.vip_2_0 import __version__ as dbv
 
 HOME = os.environ['HOME']
 DIRPATH = os.path.dirname(os.path.realpath(__file__))
@@ -28,6 +28,7 @@ class ConfigManager(object):
         parser.add_argument('--test', action="store_true", help="Use Test Files")
         parser.add_argument('-d', '--db', type=str, help="Select local db")
         parser.add_argument('-s', '--saveloc', type=str, help="Select save loc")
+        parser.add_argument('-f', '--filter', type=str, help="*filter*")
 
         args = parser.parse_args()
         self.options['dev'] = args.test
@@ -39,6 +40,8 @@ class ConfigManager(object):
             if not os.path.isdir(args.saveloc):
                 os.mkdir(args.saveloc)
             self.options['save_location'] = args.saveloc
+        if args.filter:
+            self.options['filter'] = args.filter
 
 
 
